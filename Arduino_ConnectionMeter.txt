@@ -1,0 +1,51 @@
+const int testPin = 2;   
+const int buzzerPin = 3; 
+const int ledPin = 13;   
+// Change this number to set your delay (in milliseconds)
+// 1000 = 1 second, 2000 = 2 seconds, etc.
+const unsigned long connectionDelay = 1000; 
+
+unsigned long touchStartTime = 0;
+bool isTouching = false;
+bool isBeeping = false;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(testPin, INPUT_PULLUP); 
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+}
+
+void loop() {
+  int connectionState = digitalRead(testPin);
+
+  if (connectionState == LOW && !isTouching) {
+    isTouching = true;
+    touchStartTime = millis(); // Record the exact timestamp the touch started
+    Serial.println("Probes touching... waiting for delay threshold...");
+  }
+
+  if (connectionState == LOW && isTouching) {
+    // If the elapsed time is greater than our delay threshold
+    if ((millis() - touchStartTime >= connectionDelay) && !isBeeping) {
+      digitalWrite(ledPin, HIGH);
+      tone(buzzerPin, 1500); // Clear beep tone
+      Serial.println("CONNECTED (Delay threshold met!)");
+      isBeeping = true;
+    }
+  }
+
+  if (connectionState == HIGH) {
+    if (isTouching || isBeeping) {
+      digitalWrite(ledPin, LOW);
+      noTone(buzzerPin);
+      
+      Serial.println("DISCONNECTED / OPEN");
+      
+      isTouching = false;
+      isBeeping = false;
+    }
+  }
+
+  delay(3); // Small stability delay
+}
